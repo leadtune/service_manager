@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "service_manager"
+ServiceManager.load_services ARGV[0]
+ServiceManager.start
+begin
+  sleep
+rescue Interrupt => e
+end
