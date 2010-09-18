@@ -1,0 +1,43 @@
+= ServiceManager
+
+It starts processes that have a TCP connection of some kind, most likely webservices.
+
+== Usage
+
+Inside of your project, config/services.rb, declare your services like this:
+
+  ServiceManager.define_service "main-web" do |s|
+
+    # this is the host and port the service will be available on. If something is responding here, don't try to start it again because it's already running
+    s.host       = "localhost"
+    s.port       = 8090
+
+    s.start_cmd  = lambda { "script/rails server -p #{port}"}
+
+    # When this regexp is matches, ServiceManager will know that the service is ready
+    s.loaded_cue = /WEBrick::HTTPServer#start: pid=\d+ port=\d+/
+
+    # ServiceManager will colorize the output as specified by this terminal color id.
+    s.color      = 33
+
+    # The directory
+    s.cwd        = Dir.pwd + "/main-web/"
+  end
+
+  ServiceManager.define_service "tiny-web-service" do |s|
+
+    # ...
+  end
+
+== Starting services
+
+You may start your services via the start_services command.  This is helpful if you are working on your integration test suite and don't want to reload the servers each time.
+
+You may also include the following in your integration test suite:
+
+  require "service_manager"
+  ServiceManager.start
+
+The command will only start services that are not already running (making it easy to switch between starting them which start_services, or having them start automatically when running your tests)
+
+Your services will be automatically shutdown (via INT, then without mercy, KILL after 3 seconds if it doesn't quit by then) when your integration test process stops, if started by it.
