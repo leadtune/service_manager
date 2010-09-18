@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{service_manager}
-  s.version = "0.3"
+  s.version = "0.4"
   s.authors = ["Tim Harper"]
   s.date = Date.today.to_s
   s.default_executable = %q{start_services}
@@ -24,4 +24,5 @@ EOF
   s.test_files = []
 
   s.add_dependency('background_process', ">= 1.2")
+  s.add_dependency "tcpsocket-wait"
 end
