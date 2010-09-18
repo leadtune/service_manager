@@ -1,4 +1,6 @@
+require "thread"
 class ServiceManager::Service
+  CHDIR_SEMAPHORE = Mutex.new
   NORMAL_COLOR = 37
 
   attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color
@@ -51,10 +53,12 @@ class ServiceManager::Service
     end
 
     puts "Starting #{colorized_service_name} in #{cwd} with '#{start_cmd}'"
-    Dir.chdir(cwd) do
-      without_bundler_env do
-        # system("bash -c set")
-        self.process = PTYBackgroundProcess.run(start_cmd)
+    CHDIR_SEMAPHORE.synchronize do
+      Dir.chdir(cwd) do
+        without_bundler_env do
+          # system("bash -c set")
+          self.process = PTYBackgroundProcess.run(start_cmd)
+        end
       end
     end
     at_exit { stop }
