@@ -3,7 +3,7 @@ class ServiceManager::Service
 
   attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color
 
-  class ServerDidntStart < Exception; end
+  class ServiceDidntStart < Exception; end
 
   def initialize(options = {})
     options.each { |k,v| send("#{k}=", v) }
@@ -62,6 +62,7 @@ class ServiceManager::Service
     puts "Server #{colorized_service_name} is up."
   end
 
+  # stop the service.  If we didn't start it, do nothing.
   def stop
     return unless process
     puts "Shutting down #{colorized_service_name}"
@@ -76,6 +77,7 @@ class ServiceManager::Service
     true
   end
 
+  # reload the service by hitting the configured reload_url. In this case, the service needs to be a web service, and needs to have an action that you can hit, in test mode, that will cause the process to gracefully reload itself.
   def reload
     return false unless reload_uri
     puts "Reloading #{colorized_service_name} app by hitting http://#{host}:#{port}#{reload_uri} ..."
@@ -84,6 +86,7 @@ class ServiceManager::Service
     true
   end
 
+  # detects if the service is running on the configured host and port (will return true if we weren't the ones who started it)
   def running?
     TCPSocket.listening_service?(:port => port, :host => host)
   end
@@ -103,14 +106,14 @@ protected
 
   def wait
     if loaded_cue
-      raise(ServerDidntStart) unless watch_for_cue
+      raise(ServiceDidntStart) unless watch_for_cue
       start_output_stream_thread
     else
       start_output_stream_thread
       begin
         TCPSocket.wait_for_service_with_timeout({:host => host, :port => port, :timeout => timeout})
       rescue SocketError
-        raise ServerDidntStart
+        raise ServiceDidntStart
       end
     end
     true

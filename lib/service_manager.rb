@@ -30,22 +30,24 @@ module ServiceManager
   end
 
   def services_hash
-    Hash[ServiceManager.services.map { |s| [s.name.to_sym, s]}]
+    Hash[services.map { |s| [s.name.to_sym, s]}]
   end
 
-  def stop(which = :all)
+  # Stop all services.  If service wasn't started by this service manager session, don't try and stop it.
+  def stop
+    return unless services.any? { |s| s.process }
     puts "Stopping the services..."
     services.map {|s| Thread.new { s.stop } }.map(&:join)
   end
 
-  def start(which = :all)
-    load_services
+  # Starts all configured services. If service is detected as running already, don't try and start it.
+  def start
     raise RuntimeError, "No services defined" if services.empty?
     threads = services.map do |s|
       Thread.new do
         begin
           s.start
-        rescue ServiceManager::Service::ServerDidntStart
+        rescue ServiceManager::Service::ServiceDidntStart
           puts "Quitting due to failure."
           exit(1)
         rescue Exception => e
