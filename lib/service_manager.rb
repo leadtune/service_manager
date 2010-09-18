@@ -8,7 +8,10 @@ module ServiceManager
   extend self
 
   def services
-    @services ||= []
+    return @services if @services
+    @services = []
+    load_services
+    @services
   end
 
   def load_services(path = nil)
