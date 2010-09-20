@@ -9,16 +9,21 @@ module ServiceManager
 
   def services
     return @services if @services
-    @services = []
-    load_services
-    @services
+
+    (@services = []).tap do
+      load_services if service_files_loaded.empty?
+    end
+  end
+
+  def service_files_loaded
+    @service_files_loaded ||= []
   end
 
   def load_services(path = nil)
-    path ||= SERVICES_PATH
-    return if @services_loaded
+    path = File.expand_path(path || SERVICES_PATH, Dir.pwd)
+    return if service_files_loaded.include?(path)
+    service_files_loaded << path
     load path
-    @services_loaded = true
   end
 
   def define_service(name = nil, &block)
