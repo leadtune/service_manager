@@ -1,9 +1,10 @@
 require "thread"
+require "timeout"
 class ServiceManager::Service
   CHDIR_SEMAPHORE = Mutex.new
   ANSI_COLOR_RESET = 0
 
-  attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color
+  attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color, :pid_file
 
   class ServiceDidntStart < Exception; end
 
@@ -20,7 +21,7 @@ class ServiceManager::Service
   end
 
   def server_info_hash
-    {:name => name, :host => host, :port => port}
+    {:name => name, :host => host, :port => port, :pid_file => pid_file}
   end
 
   def watch_for_cue
@@ -92,10 +93,21 @@ class ServiceManager::Service
 
   # detects if the service is running on the configured host and port (will return true if we weren't the ones who started it)
   def running?
-    TCPSocket.listening_service?(:port => port, :host => host)
+    if pid_file
+      running_via_pid_file?
+    else
+      TCPSocket.listening_service?(:port => port, :host => host)
+    end
   end
 
 protected
+
+  def running_via_pid_file?
+    Process.kill(0, File.read(pid_file).to_i)
+  rescue Errno::ESRCH, Errno::ENOENT
+    return false
+  end
+
   def colorize(output)
     "\e[0;#{color}m#{output}\e[0;#{ANSI_COLOR_RESET}m"
   end
@@ -115,11 +127,21 @@ protected
     else
       start_output_stream_thread
       begin
-        TCPSocket.wait_for_service_with_timeout({:host => host, :port => port, :timeout => timeout})
+        if pid_file
+          wait_for_server_with_timeout
+        else
+          TCPSocket.wait_for_service_with_timeout({:host => host, :port => port, :timeout => timeout})
+        end
       rescue SocketError
         raise ServiceDidntStart
       end
     end
     true
+  end
+
+  def wait_for_server_with_timeout
+    Timeout::timeout(timeout) do
+      sleep 0.25 while !running_via_pid_file?
+    end
   end
 end
