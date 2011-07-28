@@ -1,7 +1,7 @@
 require "thread"
 class ServiceManager::Service
   CHDIR_SEMAPHORE = Mutex.new
-  NORMAL_COLOR = 37
+  ANSI_COLOR_RESET = 0
 
   attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color
 
@@ -10,7 +10,7 @@ class ServiceManager::Service
   def initialize(options = {})
     options.each { |k,v| send("#{k}=", v) }
     self.host ||= "localhost"
-    self.color ||= NORMAL_COLOR
+    self.color ||= ANSI_COLOR_RESET
     self.timeout ||= 30
     raise ArgumentError, "You need to provide a name for this app service" unless name
   end
@@ -97,7 +97,7 @@ class ServiceManager::Service
 
 protected
   def colorize(output)
-    "\e[0;#{color}m#{output}\e[0;#{NORMAL_COLOR}m"
+    "\e[0;#{color}m#{output}\e[0;#{ANSI_COLOR_RESET}m"
   end
 
   def colorized_service_name
