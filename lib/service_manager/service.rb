@@ -77,7 +77,7 @@ class ServiceManager::Service
       process.kill("KILL") # ok... no more Mr. Nice Guy.
       process.wait
     end
-    puts "Server #{colorized_service_name} (#{process.pid}) is shut down"
+    puts "Server #{colorized_service_name} is shut down"
     self.process = nil
     true
   end
