@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{service_manager}
-  s.version = "0.6.2"
+  s.version = "0.6.3"
   s.authors = ["Tim Harper"]
   s.date = Date.today.to_s
   s.default_executable = %q{start_services}
