@@ -53,8 +53,8 @@ class ServiceManager::Service
       return false
     end
 
-    puts "Starting #{colorized_service_name} in #{cwd} with '#{start_cmd}'"
     CHDIR_SEMAPHORE.synchronize do
+      puts "Starting #{colorized_service_name} in #{cwd} with '#{start_cmd}'\n"
       Dir.chdir(cwd) do
         without_bundler_env do
           # system("bash -c set")
@@ -77,7 +77,7 @@ class ServiceManager::Service
       process.kill("KILL") # ok... no more Mr. Nice Guy.
       process.wait
     end
-    puts "Server #{colorized_service_name} is shut down"
+    puts "Server #{colorized_service_name} (#{process.pid}) is shut down"
     self.process = nil
     true
   end
@@ -93,10 +93,12 @@ class ServiceManager::Service
 
   # detects if the service is running on the configured host and port (will return true if we weren't the ones who started it)
   def running?
-    if pid_file
+    case
+    when pid_file
       running_via_pid_file?
-    else
-      TCPSocket.listening_service?(:port => port, :host => host)
+    when port
+      TCPSocket.listening_service?(:port => port, :host => host || "127.0.0.1")
+    else raise "Service Manager needs to be able to tell if the service is already running or not. You'll need to specify a pid file or a TCP port to check."
     end
   end
 
@@ -109,7 +111,8 @@ protected
   end
 
   def colorize(output)
-    "\e[0;#{color}m#{output}\e[0;#{ANSI_COLOR_RESET}m"
+    no_color = output.gsub(/\e\[(\d*\;|)\d*m\d*/, "")
+    "\e[0;#{color}m#{no_color}\e[0;#{ANSI_COLOR_RESET}m"
   end
 
   def colorized_service_name
