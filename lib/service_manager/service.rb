@@ -4,7 +4,7 @@ class ServiceManager::Service
   CHDIR_SEMAPHORE = Mutex.new
   ANSI_COLOR_RESET = 0
 
-  attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color, :pid_file
+  attr_accessor :name, :host, :port, :cwd, :reload_uri, :start_cmd, :process, :loaded_cue, :timeout, :color, :pid_file, :manage_pid_file
 
   class ServiceDidntStart < Exception; end
 
@@ -65,6 +65,7 @@ class ServiceManager::Service
     at_exit { stop }
     wait
     puts "Server #{colorized_service_name} is up."
+    File.open(pid_file, "wb") { |f| f << process.pid } if manage_pid_file
   end
 
   # stop the service.  If we didn't start it, do nothing.
@@ -79,6 +80,7 @@ class ServiceManager::Service
     end
     puts "Server #{colorized_service_name} (#{process.pid}) is shut down"
     self.process = nil
+    FileUtils.rm(pid_file) if manage_pid_file && File.exist?(pid_file)
     true
   end
 
