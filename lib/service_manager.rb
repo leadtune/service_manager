@@ -53,7 +53,7 @@ module ServiceManager
         begin
           s.start
         rescue ServiceManager::Service::ServiceDidntStart
-          puts "Quitting due to failure."
+          puts "Quitting due to failure in #{s.name}."
           exit(1)
         rescue Exception => e
           puts e
